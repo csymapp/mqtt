@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mochi-co/mqtt/server/listeners/auth"
-	"github.com/mochi-co/mqtt/server/system"
+	"github.com/csymapp/mqtt/server/listeners/auth"
+	"github.com/csymapp/mqtt/server/system"
 )
 
 // HTTPStats is a listener for presenting the server $SYS stats on a JSON http endpoint.

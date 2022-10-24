@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mochi-co/mqtt/server/events"
-	"github.com/mochi-co/mqtt/server/internal/circ"
-	"github.com/mochi-co/mqtt/server/internal/packets"
-	"github.com/mochi-co/mqtt/server/listeners/auth"
-	"github.com/mochi-co/mqtt/server/system"
+	"github.com/csymapp/mqtt/server/events"
+	"github.com/csymapp/mqtt/server/internal/circ"
+	"github.com/csymapp/mqtt/server/internal/packets"
+	"github.com/csymapp/mqtt/server/listeners/auth"
+	"github.com/csymapp/mqtt/server/system"
 	"github.com/stretchr/testify/require"
 )
 
