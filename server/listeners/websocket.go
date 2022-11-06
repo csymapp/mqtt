@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -23,7 +24,7 @@ var (
 	// wsUpgrader is used to upgrade the incoming http/tcp connection to a
 	// websocket compliant connection.
 	wsUpgrader = &websocket.Upgrader{
-		Subprotocols: []string{"mqtt"},
+		Subprotocols: []string{"mqtt", "mqttv3.1"},
 		CheckOrigin:  func(r *http.Request) bool { return true },
 	}
 )
@@ -116,12 +117,11 @@ func (l *Websocket) ID() string {
 // Listen starts listening on the listener's network address.
 func (l *Websocket) Listen(s *system.Info) error {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", l.handler)
+	mux.HandleFunc("/mqtt", l.handler)
 	l.listen = &http.Server{
 		Addr:    l.address,
 		Handler: mux,
 	}
-
 	// The following logic is deprecated in favour of passing through the tls.Config
 	// value directly, however it remains in order to provide backwards compatibility.
 	// It will be removed someday, so use the preferred method (l.config.TLSConfig).
@@ -141,13 +141,27 @@ func (l *Websocket) Listen(s *system.Info) error {
 	return nil
 }
 
+func Subprotocols(r *http.Request) []string {
+	h := strings.TrimSpace(r.Header.Get("Sec-Websocket-Protocol"))
+	if h == "" {
+		return nil
+	}
+	protocols := strings.Split(h, ",")
+	for i := range protocols {
+		protocols[i] = strings.TrimSpace(protocols[i])
+	}
+	return protocols
+}
+
 func (l *Websocket) handler(w http.ResponseWriter, r *http.Request) {
+
+	subprotocols := Subprotocols(r)
+	wsUpgrader.Subprotocols = subprotocols // very bad assumption is that all the subprotocols will be supported
 	c, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 	defer c.Close()
-
 	l.establish(l.id, &wsConn{c.UnderlyingConn(), c}, l.config.Auth)
 }
 
@@ -159,6 +173,12 @@ func (l *Websocket) Serve(establish EstablishFunc) {
 	if l.listen.TLSConfig != nil {
 		l.listen.ListenAndServeTLS("", "")
 	} else {
+		// addr := l.listen.Addr
+		// ln, err := net.Listen("tcp4", addr)
+		// if err != nil {
+		// } else {
+		// 	l.listen.Serve(ln)
+		// }
 		l.listen.ListenAndServe()
 	}
 }
